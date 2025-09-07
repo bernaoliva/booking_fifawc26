@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Booking Selector – FIFA 26</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ===== FONTES ===== */
+  @font-face{font-family:'MinhaFonte';src:url('fonte.ttf') format('truetype');font-display:swap;}
+  @font-face{font-family:'FonteFina';src:url('fontefina.ttf') format('truetype');font-weight:300;font-display:swap;}
+
+  /* ===== TEMA ===== */
+  :root{
+    --bg:#000; --panel:#3f3e3f; --panel-2:#3f3e3f; --border:#5a595a;
+    --text:#fff; --muted:#d0d0d0; --chip-bg:#3f3e3f; --accent:#fff;
+    --gs:#2a88b3; --r32:#e58a3a; --r16:#4ec7c4; --qf:#f0ad4e; --sf:#69c4ff; --br:#a35aff; --fn:#6bbf3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'MinhaFonte',system-ui,Arial,sans-serif;font-size:15px}
+
+  /* ===== HEADER ===== */
+  .header{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--panel);border-bottom:1px solid var(--border)}
+  .header h1{margin:0;font-size:20px;font-weight:700}
+  .header img{height:80px;width:auto;display:block}
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:#121212}
+  .tab-btn{padding:8px 12px;border:1px solid var(--border);background:#1a1a1a;color:#fff;border-radius:8px;cursor:pointer}
+  .tab-btn.active{background:#2a2a2a;border-color:#777}
+  .tab{display:none}
+  .tab.active{display:block}
+
+  /* ===== FORM CONTROLS ===== */
+  .container{padding:16px}
+  h2{font-size:18px;margin:16px 0 8px}
+  label{font-weight:600}
+  select,input[type=text],input[type=number]{padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
+  select:focus,input:focus{outline:none;border-color:var(--text)}
+  .btn{padding:8px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;border-radius:6px}
+  .btn:hover{background:var(--panel-2)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;align-items:center}
+
+  /* ===== TABELA (Catálogo) ===== */
+  .table-wrap{max-height:50vh;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel);position:sticky;top:0;z-index:1}
+  tbody tr:nth-child(even){background:#1d1d1d}
+  tbody tr:hover{background:#2a2a2a}
+  td.name,td.descricao,td.servinclui,td.servnaoinclui{font-family:'FonteFina',system-ui,Arial,sans-serif;font-weight:300}
+  .chip{background:var(--chip-bg);border:1px solid var(--border);border-radius:999px;padding:2px 6px;font-size:12px}
+  .muted{color:var(--muted);font-size:12px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .panel{background:#161616;border:1px solid var(--border);border-radius:8px;padding:12px}
+  .list{max-height:30vh;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:#0f0f0f}
+  .row-item,.scenario-row,.extra-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--border);padding:6px 0}
+  .row-item:last-child,.scenario-row:last-child,.extra-row:last-child{border-bottom:0}
+  .scenario-actions,.extra-actions{display:flex;gap:6px}
+  .qty{display:flex;align-items:center;gap:6px}
+  .qty input[type=number]{width:72px;text-align:center}
+  .badge{background:#2f3645;border:1px solid #42536f;color:#e9f0ff;padding:2px 6px;border-radius:999px;font-size:12px}
+  .total{font-weight:700;font-size:16px;margin-top:12px}
+  input[type=checkbox]{accent-color:var(--accent)}
+  .error{background:#3a2222;border:1px solid #a55;padding:10px;border-radius:8px;color:#ffdddd;margin-top:10px}
+
+  /* ===== CALENDÁRIO (coluna única) ===== */
+  .left-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:10px;background:#0b0b0b}
+  .left-scroll::-webkit-scrollbar{height:10px}
+  .left-scroll::-webkit-scrollbar-thumb{background:#2b2b2b;border-radius:10px}
+  .left-scroll::-webkit-scrollbar-track{background:#111}
+  #bigGrid{display:grid;width:max-content}
+  .date-head{position:sticky;top:0;background:#181818;border-left:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a;padding:2px 4px;font-size:10px;z-index:2;text-align:center;white-space:nowrap}
+  .date-phases{display:flex;gap:2px;justify-content:center;margin-top:2px;flex-wrap:wrap}
+  .p-dot{display:inline-block;min-width:18px;padding:1px 3px;border-radius:3px;border:1px solid #444;font-size:9px;line-height:1}
+  .p-gs{background:var(--gs)} .p-r32{background:var(--r32)} .p-r16{background:var(--r16)}
+  .p-qf{background:var(--qf)} .p-sf{background:var(--sf)} .p-br{background:var(--br)} .p-fn{background:var(--fn)}
+  .venue-cell{background:#101010;border-top:1px solid #2a2a2a;padding:6px 8px;font-weight:600;position:sticky;left:0;z-index:1;white-space:nowrap}
+  .slot{border-left:1px solid #2a2a2a;border-top:1px solid #2a2a2a;min-height:34px;padding:2px;display:flex;flex-direction:column;gap:3px}
+  .mcard{border:1px solid #444;border-radius:5px;padding:2px 4px;background:#121212;cursor:pointer;font-size:10px}
+  .mcard .mid{font-weight:800;letter-spacing:.1px}
+  .mcard.gs{border-color:var(--gs)} .mcard.r32{border-color:var(--r32)} .mcard.r16{border-color:var(--r16)}
+  .mcard.qf{border-color:var(--qf)} .mcard.sf{border-color:var(--sf)} .mcard.br{border-color:var(--br)} .mcard.fn{border-color:var(--fn)}
+  .mcard.selected{outline:2px solid var(--accent)}
+
+  /* ===== Itens deste jogo ===== */
+  .match-items-wrap{max-height:42vh;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#0f0f0f;padding:6px}
+  .mi{display:grid;grid-template-columns:auto 1fr auto auto auto;
+      grid-template-areas:"code name qty unit line" ". desc qty unit line";
+      gap:6px 10px;align-items:center;padding:8px 10px;margin:6px 0;background:#121212;border:1px solid #2a2a2a;border-radius:8px;font-size:13px}
+  .mi-code{grid-area:code}
+  .mi-name,.mi-desc{display:block;overflow:hidden;line-height:1.2;max-height:calc(1.2em*2);text-overflow:clip;-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 60%,rgba(0,0,0,0));mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 60%,rgba(0,0,0,0))}
+  @supports (line-clamp:2){.mi-name,.mi-desc{display:-webkit-box;-webkit-box-orient:vertical;line-clamp:2;max-height:none;-webkit-mask-image:none;mask-image:none}}
+  .mi-name{font-family:'FonteFina';font-weight:300}
+  .mi-desc{color:var(--muted);font-size:11px}
+  .mi-qty{grid-area:qty;display:flex;align-items:center;gap:6px}
+  .mi-qty .btn{padding:4px 8px}
+  .mi-qty input[type=number]{width:56px;text-align:center;padding:6px 6px}
+  .mi-unit{grid-area:unit;justify-self:end}
+  .mi-line{grid-area:line;justify-self:end}
+  .mi .badge{font-size:11px}
+  .mi .btn-remove{margin-left:8px}
+  @media (max-width:900px){
+    .mi{grid-template-columns:auto 1fr auto;grid-template-areas:"code name line" "desc desc desc" "qty unit line";}
+    .mi-unit,.mi-line{justify-self:start}
+  }
+
+  /* ===== Resumo Geral ===== */
+  .summary-panel{margin-top:16px}
+  .summary-table{width:100%;border-collapse:collapse;margin-top:8px}
+  .summary-table th,.summary-table td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left}
+  .summary-table th{background:#1a1a1a}
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Seleção de Bookings</h1>
+    <img src="logo.png" alt="Logo">
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="catalogo">Catálogo & Cenários</button>
+    <button class="tab-btn" data-tab="calendario">Calendário (igual ao PDF)</button>
+  </div>
+
+  <!-- ====== ABA 1: CATÁLOGO & CENÁRIOS ====== -->
+  <div id="catalogo" class="tab active">
+    <div class="container">
+      <div class="toolbar" style="gap:18px">
+        <div><label for="tipo">Tipo:</label><br><select id="tipo"></select></div>
+        <div><label for="subtipo">Subtipo:</label><br><select id="subtipo"></select></div>
+        <div>
+          <label for="buscaCampo">Buscar em:</label><br>
+          <select id="buscaCampo">
+            <option value="__ALLCOLS__">Todos os campos</option>
+            <option value="Booking Code">Booking Code</option>
+            <option value="Tipo">Tipo</option>
+            <option value="Subtipo">Subtipo</option>
+            <option value="Name">Name</option>
+            <option value="Descrição">Descrição</option>
+            <option value="Serviço Inclui">Serviço Inclui</option>
+            <option value="Serviço Não Inclui">Serviço Não Inclui</option>
+          </select>
+        </div>
+        <div><label for="buscaValor">Termo:</label><br><input type="text" id="buscaValor" placeholder="Digite para filtrar"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <button id="selectVisible" class="btn">Selecionar visíveis</button>
+          <button id="clearVisible" class="btn">Limpar visíveis</button>
+        </div>
+      </div>
+
+      <div id="errorBox" class="error" style="display:none">
+        <div id="errorMsg">Erro ao carregar bookings.csv</div>
+        <div style="margin-top:8px">
+          <input type="file" id="fileInput" accept=".csv" class="btn">
+          <span class="muted">Dica: abra via <code>http://localhost:8000</code></span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tbl"><thead>
+          <tr>
+            <th><input type="checkbox" id="toggleAll"></th>
+            <th>Booking Code</th><th>Tipo / Subtipo</th><th>Name</th><th>Descrição</th>
+            <th>Serviço Inclui</th><th>Serviço Não Inclui</th><th>Valor (USD)</th>
+          </tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="two-col" style="margin-top:16px">
+        <div class="panel">
+          <h2>Selecionados</h2>
+          <div class="list" id="selectedList"></div>
+          <div class="total">Subtotal selecionados: <span id="subtotal">USD 0</span></div>
+          <div class="toolbar">
+            <input id="scenarioName" type="text" placeholder="Nome do cenário" style="min-width:220px">
+            <button id="saveScenario" class="btn">Salvar cenário</button>
+            <button id="updateScenario" class="btn" style="display:none;">Atualizar cenário</button>
+            <button id="cancelEdit" class="btn" style="display:none;">Cancelar edição</button>
+            <button id="clearSelection" class="btn">Limpar seleção</button>
+          </div>
+          <div class="muted" id="editingHint" style="display:none;">Editando: <span id="editingName"></span></div>
+        </div>
+
+        <div class="panel">
+          <h2>Cenários</h2>
+          <div id="scenariosList" class="list"></div>
+          <div class="toolbar">
+            <button id="applyPreview" class="btn">Aplicar pré-visualização</button>
+            <span class="muted">Marque cenários para somar.</span>
+          </div>
+          <div>Total pré-visualização: <span id="previewTotal" class="badge">USD 0</span></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <h2>Custos Adicionais (Catálogo)</h2>
+        <div class="toolbar">
+          <div><label for="extraName">Nome</label><br><input type="text" id="extraName" placeholder="Ex: Taxa de Instalação"></div>
+          <div><label for="extraValue">Valor</label><br><input type="text" id="extraValue" placeholder="Ex: 1.200,50"></div>
+          <button id="addExtra" class="btn" style="align-self:flex-end;">Adicionar ao catálogo</button>
+        </div>
+        <div class="list" id="extrasList"></div>
+        <span class="muted">Aparecem como <b>Tipo: Custos Adicionais</b>.</span>
+      </div>
+
+      <div class="total" style="margin-top:16px">Total Selecionado: <span id="total">USD 0</span></div>
+    </div>
+  </div>
+
+  <!-- ====== ABA 2: CALENDÁRIO ====== -->
+  <div id="calendario" class="tab">
+    <div class="container">
+      <div class="toolbar" style="justify-content:space-between;gap:8px">
+        <div>
+          <h2 style="margin:0">Calendário de Jogos (layout do PDF)</h2>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--gs);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>Group</span>
+            <span><i class="dot" style="background:var(--r32);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>R32</span>
+            <span><i class="dot" style="background:var(--r16);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>R16</span>
+            <span><i class="dot" style="background:var(--qf);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>QF</span>
+            <span><i class="dot" style="background:var(--sf);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>SF</span>
+            <span><i class="dot" style="background:var(--br);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>Bronze</span>
+            <span><i class="dot" style="background:var(--fn);width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px"></i>Final</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="matchesError" class="error" style="display:none">
+        Não encontrei <code>matches.csv</code>. Coloque o arquivo na pasta ou carregue abaixo.
+        <div style="margin-top:8px"><input type="file" id="matchesFile" accept=".csv" class="btn"></div>
+      </div>
+
+      <div class="left-scroll"><div id="bigGrid"></div></div>
+    </div>
+
+    <div class="container">
+      <div class="panel">
+        <h2>Jogo selecionado</h2>
+        <div id="currentMatchBox" class="muted">Nenhum jogo selecionado.</div>
+        <div class="toolbar" style="margin-top:8px">
+          <button id="attachSelection" class="btn">Associar seleção atual</button>
+          <button id="clearMatch" class="btn">Limpar itens do jogo</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Itens deste jogo</h2>
+        <div id="matchItems" class="match-items-wrap"></div>
+        <div class="total">Total do jogo: <span id="matchTotal" class="badge">USD 0</span></div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="panel summary-panel">
+        <h2>Resumo Geral (todas as partidas)</h2>
+        <div class="total">Total geral: <span id="globalTotal" class="badge">USD 0</span></div>
+        <table class="summary-table" id="perMatchTable">
+          <thead>
+            <tr>
+              <th>Match</th><th>Data</th><th>Sede</th><th>Confronto</th><th>Fase</th><th>Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== TABS ====== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ====== HELPERS ====== */
+function parseCSV(text){
+  const rows=[]; let cur=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c=='"'){ if(text[i+1]=='"'){field+='"'; i++;} else inQuotes=false; }
+      else field+=c;
+    }else{
+      if(c=='"'){ inQuotes=true; }
+      else if(c===','){ cur.push(field); field=''; }
+      else if(c=='\r'){/* ignore */}
+      else if(c=='\n'){ cur.push(field); rows.push(cur); cur=[]; field=''; }
+      else field+=c;
+    }
+  }
+  if(field.length||cur.length){ cur.push(field); rows.push(cur); }
+  return rows.filter(r=>r.length&&r.some(x=>String(x).trim()!==''));
+}
+function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toUpperCase();}
+function canonVal(el){return el && el.value ? el.value : '__ALL__';}
+
+/* "1.234,56" / "1,234.56" / "1.234" -> 1234.xx */
+function moneyToNumber(s){
+  if(s==null) return 0;
+  let str = String(s).trim().replace(/\s/g,'').replace(/[^\d,.\-]/g,'');
+  if(!str) return 0;
+  const lc=str.lastIndexOf(','), ld=str.lastIndexOf('.');
+  const hc=lc!==-1, hd=ld!==-1;
+  if(hc&&hd){
+    const ds = lc > ld ? ',' : '.';
+    const ts = ds === ',' ? '.' : ',';
+    str = str.replace(new RegExp('\\'+ts,'g'),'');
+    str = str.replace(new RegExp('\\'+ds,'g'),'.');
+    return parseFloat(str)||0;
+  }
+  if(hc&&!hd){
+    const p=str.split(','), last=p[p.length-1];
+    if(last.length===3&&p.length>1){ str=p.join(''); return parseFloat(str)||0; }
+    str=str.replace(/,/g,'.'); return parseFloat(str)||0;
+  }
+  if(hd&&!hc){
+    const p=str.split('.'), last=p[p.length-1];
+    if(last.length===3&&p.length>1){ str=p.join(''); return parseFloat(str)||0; }
+    else if(last.length<=2){ const dec=p.pop(); str=p.join('')+'.'+dec; return parseFloat(str)||0; }
+    str=str.replace(/\./g,''); return parseFloat(str)||0;
+  }
+  return parseFloat(str)||0;
+}
+function numberToMoney(n){return 'USD '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});}
+const ID_OF=(r)=>(r['Booking Code']?String(r['Booking Code']).trim():'')+'|'+(r['Name']||'');
+
+/* ====== STORAGE ====== */
+const STORAGE={SCEN:'bk_scenarios_v2', EXTRAS:'bk_extras_v1'};
+
+function saveScenariosToStorage(){
+  const payload=[...scenarios].map(([name,map])=>({name,items:[...map].map(([id,q])=>({id,q}))}));
+  localStorage.setItem(STORAGE.SCEN, JSON.stringify(payload));
+}
+function loadScenariosFromStorage(){
+  try{
+    const raw=localStorage.getItem(STORAGE.SCEN); if(!raw) return;
+    const arr=JSON.parse(raw);
+    scenarios.clear();
+    for(const s of arr){
+      const m=new Map();
+      for(const it of s.items||[]) m.set(it.id, it.q||1);
+      scenarios.set(s.name, m);
+    }
+  }catch(e){ console.warn('Falha ao ler cenários:', e); }
+}
+function saveExtrasToStorage(){
+  localStorage.setItem(STORAGE.EXTRAS, JSON.stringify(extrasCatalog));
+}
+function loadExtrasFromStorage(){
+  try{
+    const raw=localStorage.getItem(STORAGE.EXTRAS); if(!raw) return;
+    const arr=JSON.parse(raw)||[];
+    for(const it of arr){
+      // reconstroi no catálogo/rows
+      const row={"Tipo":"Custos Adicionais","Subtipo":"Personalizado","Booking Code":it.code,"Name":it.name,"Descrição":it.name,"Serviço Inclui":"","Serviço Não Inclui":"","Valor":numberToMoney(it.value)};
+      rows.push(row);
+    }
+    extrasCatalog = arr;
+    // ajusta sequência
+    const maxN = extrasCatalog.reduce((mx,e)=>{
+      const m=(e.code||'').match(/EXTRA-(\d{4})/); return m?Math.max(mx,parseInt(m[1],10)):mx;
+    },0);
+    extraSeq = Math.max(extraSeq, maxN+1);
+  }catch(e){ console.warn('Falha ao ler extras:', e); }
+}
+
+/* ====== ESTADO: CATÁLOGO ====== */
+let rows=[], filtered=[];
+let selectedIds=new Set(), selectionQty=new Map();
+const scenarios=new Map(); let previewSelectedScenarioNames=new Set();
+let extrasCatalog=[], extraSeq=1;
+let editingScenario=null; // nome do cenário sendo editado (ou null)
+
+/* ====== ELEMENTOS: CATÁLOGO ====== */
+const tipoSel=document.getElementById('tipo');
+const subtipoSel=document.getElementById('subtipo');
+const buscaCampo=document.getElementById('buscaCampo');
+const buscaValor=document.getElementById('buscaValor');
+const tbody=document.querySelector('#tbl tbody');
+const totalEl=document.getElementById('total');
+const subtotalEl=document.getElementById('subtotal');
+const toggleAll=document.getElementById('toggleAll');
+const btnSelectVisible=document.getElementById('selectVisible');
+const btnClearVisible=document.getElementById('clearVisible');
+const errorBox=document.getElementById('errorBox');
+const errorMsg=document.getElementById('errorMsg');
+const fileInput=document.getElementById('fileInput');
+const selectedList=document.getElementById('selectedList');
+const scenarioName=document.getElementById('scenarioName');
+const saveScenarioBtn=document.getElementById('saveScenario');
+const updateScenarioBtn=document.getElementById('updateScenario');
+const cancelEditBtn=document.getElementById('cancelEdit');
+const editingHint=document.getElementById('editingHint');
+const editingNameEl=document.getElementById('editingName');
+const clearSelectionBtn=document.getElementById('clearSelection');
+const scenariosList=document.getElementById('scenariosList');
+const applyPreviewBtn=document.getElementById('applyPreview');
+const previewTotalEl=document.getElementById('previewTotal');
+const extrasList=document.getElementById('extrasList');
+const extraName=document.getElementById('extraName');
+const extraValue=document.getElementById('extraValue');
+const addExtraBtn=document.getElementById('addExtra');
+
+/* ===== FUNÇÕES: CATÁLOGO ===== */
+function rebuildTipoOptions(){
+  const m=new Map();
+  for(const r of rows){const k=norm(r['Tipo']);if(!k)continue;if(!m.has(k))m.set(k,r['Tipo']);}
+  const items=Array.from(m.entries()).sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
+  let html=`<option value="__ALL__">Todos</option>`;
+  for(const [k,l]of items)html+=`<option value="${k}">${l}</option>`;
+  const prev=canonVal(tipoSel);tipoSel.innerHTML=html;tipoSel.value=(prev!=='__ALL__'&&m.has(prev))?prev:'__ALL__';
+}
+function rebuildSubtipoOptions(){
+  const t=canonVal(tipoSel);
+  const base=t==='__ALL__'?rows:rows.filter(r=>norm(r['Tipo'])===t);
+  const m=new Map();
+  for(const r of base){const k=norm(r['Subtipo']);if(!k)continue;if(!m.has(k))m.set(k,r['Subtipo']);}
+  const items=Array.from(m.entries()).sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
+  let html=`<option value="__ALL__">Todos</option>`;
+  for(const [k,l]of items)html+=`<option value="${k}">${l}</option>`;
+  const prev=canonVal(subtipoSel);subtipoSel.innerHTML=html;subtipoSel.value=(prev!=='__ALL__'&&m.has(prev))?prev:'__ALL__';
+}
+function applyFilter(){
+  const t=canonVal(tipoSel),s=canonVal(subtipoSel),f=buscaCampo.value,q=(buscaValor.value||'').trim().toLowerCase();
+  filtered=rows.filter(r=>{
+    const okT=(t==='__ALL__'||norm(r['Tipo'])===t),okS=(s==='__ALL__'||norm(r['Subtipo'])===s);
+    let okSearch=true;
+    if(q){
+      if(f==='__ALLCOLS__'){
+        okSearch=['Booking Code','Tipo','Subtipo','Name','Descrição','Serviço Inclui','Serviço Não Inclui','Valor']
+          .some(c=>String(r[c]||'').toLowerCase().includes(q));
+      }else okSearch=String(r[f]||'').toLowerCase().includes(q);
+    }
+    return okT&&okS&&okSearch;
+  });
+}
+function idToRow(id){const [code,name]=id.split('|');return rows.find(rr=>String(rr['Booking Code']).trim()===code&&String(rr['Name'])===name);}
+function priceOfId(id){const r=idToRow(id);return r?moneyToNumber(r['Valor']):0;}
+function computeSelectionTotal(){let tot=0;for(const id of selectedIds){const q=selectionQty.get(id)||1;tot+=priceOfId(id)*q;}return tot;}
+
+function renderTable(){
+  tbody.innerHTML='';
+  for(const r of filtered){
+    const id=ID_OF(r),ck=selectedIds.has(id)?'checked':'';
+    tbody.insertAdjacentHTML('beforeend',`
+<tr>
+  <td><input type="checkbox" data-id="${id}" ${ck}></td>
+  <td><span class="chip">${(r['Booking Code']||'').toString().trim()}</span></td>
+  <td><strong>${r['Tipo']||''}</strong><div class="muted">${r['Subtipo']||''}</div></td>
+  <td class="name" title="${(r['Name']||'').replaceAll('"','&quot;')}">${r['Name']||''}</td>
+  <td class="descricao" title="${(r['Descrição']||'').replaceAll('"','&quot;')}">${r['Descrição']||''}</td>
+  <td class="servinclui">${r['Serviço Inclui']||''}</td>
+  <td class="servnaoinclui">${r['Serviço Não Inclui']||''}</td>
+  <td>${r['Valor']||''}</td>
+</tr>`);
+  }
+  updateTotalsAndLists();
+}
+function renderSelectedList(){
+  selectedList.innerHTML='';
+  for(const id of selectedIds){
+    const r=idToRow(id); if(!r)continue;
+    const qty=selectionQty.get(id)||1,unit=priceOfId(id),line=unit*qty;
+    selectedList.insertAdjacentHTML('beforeend',`
+<div class="row-item">
+  <div>
+    <div><span class="chip">${r['Booking Code']||''}</span> ${r['Name']||''}</div>
+    <div class="muted">${r['Descrição']||''}</div>
+  </div>
+  <div class="qty">
+    <button class="btn" data-qtyminus="${id}">-</button>
+    <input type="number" min="1" step="1" value="${qty}" data-qty="${id}">
+    <button class="btn" data-qtyplus="${id}">+</button>
+    <span class="badge">${numberToMoney(unit)} un.</span>
+    <span class="badge">${numberToMoney(line)}</span>
+    <button class="btn" data-remove="${id}">remover</button>
+  </div>
+</div>`);
+  }
+}
+function updateTotalsAndLists(){
+  const selTot=computeSelectionTotal();
+  totalEl.textContent=numberToMoney(selTot);
+  subtotalEl.textContent=numberToMoney(selTot);
+  renderSelectedList();
+  updatePreviewTotal();
+
+  if(toggleAll){
+    if(filtered.length>0){
+      const allSel=filtered.every(r=>selectedIds.has(ID_OF(r)));
+      toggleAll.checked=allSel;
+      toggleAll.indeterminate=!allSel&&filtered.some(r=>selectedIds.has(ID_OF(r)));
+    }else{
+      toggleAll.checked=false;toggleAll.indeterminate=false;
+    }
+  }
+}
+
+/* Eventos catálogo */
+tipoSel.addEventListener('change',()=>{rebuildSubtipoOptions();applyFilter();renderTable();});
+subtipoSel.addEventListener('change',()=>{applyFilter();renderTable();});
+buscaCampo.addEventListener('change',()=>{applyFilter();renderTable();});
+buscaValor.addEventListener('input',()=>{applyFilter();renderTable();});
+tbody.addEventListener('change',e=>{
+  const cb=e.target;
+  if(cb&&cb.matches('input[type=checkbox][data-id]')){
+    const id=cb.getAttribute('data-id');
+    if(cb.checked){selectedIds.add(id);if(!selectionQty.has(id))selectionQty.set(id,1);}
+    else{selectedIds.delete(id);selectionQty.delete(id);}
+    updateTotalsAndLists();
+  }
+});
+toggleAll.addEventListener('change',()=>{
+  if(toggleAll.checked){
+    for(const r of filtered){const id=ID_OF(r);selectedIds.add(id);if(!selectionQty.has(id))selectionQty.set(id,1);}
+  }else{
+    for(const r of filtered){const id=ID_OF(r);selectedIds.delete(id);selectionQty.delete(id);}
+  }
+  renderTable();
+});
+btnSelectVisible.addEventListener('click',()=>{for(const r of filtered){const id=ID_OF(r);selectedIds.add(id);if(!selectionQty.has(id))selectionQty.set(id,1);}renderTable();});
+btnClearVisible.addEventListener('click',()=>{for(const r of filtered){const id=ID_OF(r);selectedIds.delete(id);selectionQty.delete(id);}renderTable();});
+selectedList.addEventListener('click',e=>{
+  const rem=e.target.closest('button[data-remove]'),
+        minus=e.target.closest('button[data-qtyminus]'),
+        plus=e.target.closest('button[data-qtyplus]');
+  if(rem){const id=rem.getAttribute('data-remove');selectedIds.delete(id);selectionQty.delete(id);renderTable();return;}
+  if(minus){const id=minus.getAttribute('data-qtyminus');const q=selectionQty.get(id)||1;selectionQty.set(id,Math.max(1,q-1));updateTotalsAndLists();return;}
+  if(plus){const id=plus.getAttribute('data-qtyplus');const q=selectionQty.get(id)||1;selectionQty.set(id,q+1);updateTotalsAndLists();return;}
+});
+selectedList.addEventListener('change',e=>{
+  const input=e.target.closest('input[data-qty]');if(!input)return;
+  const id=input.getAttribute('data-qty');let v=parseInt(input.value,10);if(!isFinite(v)||v<1)v=1;
+  selectionQty.set(id,v);updateTotalsAndLists();
+});
+clearSelectionBtn.addEventListener('click',()=>{selectedIds.clear();selectionQty.clear();renderTable();});
+
+/* ===== Cenários (persistentes + edição) ===== */
+function scenarioTotal(m){let t=0;for(const [id,q]of m.entries())t+=priceOfId(id)*q;return t;}
+function setEditing(nameOrNull){
+  editingScenario = nameOrNull;
+  const editing = !!nameOrNull;
+  updateScenarioBtn.style.display = editing ? '' : 'none';
+  cancelEditBtn.style.display = editing ? '' : 'none';
+  editingHint.style.display = editing ? '' : 'none';
+  editingNameEl.textContent = editing ? nameOrNull : '';
+  if(editing){ scenarioName.value = nameOrNull; }
+}
+saveScenarioBtn.addEventListener('click',()=>{
+  const name=(scenarioName.value||'').trim();
+  if(!name){alert('Dê um nome ao cenário.');return;}
+  // criar novo ou sobrescrever se já existir (confirmação leve)
+  if(scenarios.has(name) && !editingScenario){
+    if(!confirm('Já existe um cenário com esse nome. Deseja sobrescrever?')) return;
+  }
+  const map=new Map();for(const id of selectedIds){map.set(id,selectionQty.get(id)||1);}
+  scenarios.set(name,map);
+  setEditing(null);
+  renderScenariosList();
+  saveScenariosToStorage();
+});
+updateScenarioBtn.addEventListener('click',()=>{
+  if(!editingScenario){alert('Nenhum cenário em edição.');return;}
+  const newName=(scenarioName.value||'').trim();
+  if(!newName){alert('Dê um nome ao cenário.');return;}
+  const map=new Map();for(const id of selectedIds){map.set(id,selectionQty.get(id)||1);}
+  if(newName!==editingScenario && scenarios.has(newName)){
+    if(!confirm('Já existe um cenário com esse nome. Deseja sobrescrever?')) return;
+  }
+  // renomear: remove antigo e grava com o novo nome
+  if(newName!==editingScenario){ scenarios.delete(editingScenario); }
+  scenarios.set(newName, map);
+  previewSelectedScenarioNames.delete(editingScenario);
+  setEditing(null);
+  renderScenariosList();
+  saveScenariosToStorage();
+});
+cancelEditBtn.addEventListener('click',()=>{ setEditing(null); });
+
+function renderScenariosList(){
+  scenariosList.innerHTML='';
+  for(const [n,m]of scenarios){
+    const tot=scenarioTotal(m);const checked=previewSelectedScenarioNames.has(n)?'checked':'';
+    scenariosList.insertAdjacentHTML('beforeend',`
+<div class="scenario-row">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <input type="checkbox" data-scen="${n}" ${checked} title="Somar na pré-visualização">
+    <strong>${n}</strong>
+    <span class="badge">${m.size} itens</span>
+  </div>
+  <div class="scenario-actions">
+    <span class="badge">${numberToMoney(tot)}</span>
+    <button class="btn" data-load="${n}">Aplicar</button>
+    <button class="btn" data-edit="${n}">Editar</button>
+    <button class="btn" data-rename="${n}">Renomear</button>
+    <button class="btn" data-del="${n}">Excluir</button>
+  </div>
+</div>`);
+  }
+  updatePreviewTotal();
+}
+scenariosList.addEventListener('click',e=>{
+  const del=e.target.closest('button[data-del]');
+  const load=e.target.closest('button[data-load]');
+  const edit=e.target.closest('button[data-edit]');
+  const ren =e.target.closest('button[data-rename]');
+  if(del){
+    const n=del.getAttribute('data-del');
+    if(confirm(`Excluir cenário "${n}"?`)){
+      scenarios.delete(n);
+      previewSelectedScenarioNames.delete(n);
+      if(editingScenario===n) setEditing(null);
+      renderScenariosList();
+      saveScenariosToStorage();
+    }
+    return;
+  }
+  if(load){
+    const n=load.getAttribute('data-load');const m=scenarios.get(n);
+    if(m){selectedIds=new Set(m.keys());selectionQty=new Map(m);renderTable();}
+    return;
+  }
+  if(edit){
+    const n=edit.getAttribute('data-edit');const m=scenarios.get(n);
+    if(m){
+      selectedIds=new Set(m.keys());selectionQty=new Map(m);
+      renderTable();
+      setEditing(n);
+    }
+    return;
+  }
+  if(ren){
+    const n=ren.getAttribute('data-rename');
+    const novo = prompt('Novo nome do cenário:', n)||'';
+    const newName = novo.trim();
+    if(!newName || newName===n) return;
+    if(scenarios.has(newName) && !confirm('Já existe. Sobrescrever?')) return;
+    const m = scenarios.get(n);
+    scenarios.delete(n);
+    scenarios.set(newName, m);
+    if(editingScenario===n) editingScenario=newName;
+    renderScenariosList();
+    saveScenariosToStorage();
+  }
+});
+scenariosList.addEventListener('change',e=>{
+  const cb=e.target;if(cb&&cb.matches('input[type=checkbox][data-scen]')){
+    const n=cb.getAttribute('data-scen');if(cb.checked)previewSelectedScenarioNames.add(n);else previewSelectedScenarioNames.delete(n);
+    updatePreviewTotal();
+  }
+});
+function updatePreviewTotal(){
+  const union=new Map();
+  for(const n of previewSelectedScenarioNames){
+    const m=scenarios.get(n);if(!m)continue;
+    for(const [id,q]of m.entries()) union.set(id,(union.get(id)||0)+q);
+  }
+  let t=0;for(const [id,q]of union.entries()) t+=priceOfId(id)*q;
+  previewTotalEl.textContent=numberToMoney(t);
+  return union;
+}
+applyPreviewBtn.addEventListener('click',()=>{
+  const u=updatePreviewTotal();selectedIds=new Set(u.keys());selectionQty=new Map(u);renderTable();
+});
+
+/* ===== Custos Adicionais (persistentes) ===== */
+function addExtraToCatalog(name,value){
+  const code=`EXTRA-${String(extraSeq).padStart(4,'0')}`;extraSeq++;
+  const row={"Tipo":"Custos Adicionais","Subtipo":"Personalizado","Booking Code":code,"Name":name,"Descrição":name,"Serviço Inclui":"","Serviço Não Inclui":"","Valor":numberToMoney(value)};
+  rows.push(row);extrasCatalog.push({code,name,value});
+}
+function renderExtrasCatalog(){
+  extrasList.innerHTML='';
+  for(const it of extrasCatalog){
+    extrasList.insertAdjacentHTML('beforeend',`
+<div class="extra-row">
+  <div><span class="chip">${it.code}</span> ${it.name}</div>
+  <div class="extra-actions">
+    <span class="badge">${numberToMoney(it.value)}</span>
+    <button class="btn" data-xdel="${it.code}">Excluir</button>
+  </div>
+</div>`);
+  }
+}
+function removeExtraFromCatalog(code){
+  extrasCatalog=extrasCatalog.filter(x=>x.code!==code);
+  rows=rows.filter(r=>!(r['Booking Code']===code&&r['Tipo']==='Custos Adicionais'));
+  for(const id of Array.from(selectedIds)){ if(id.startsWith(code+'|')){ selectedIds.delete(id); selectionQty.delete(id); } }
+}
+addExtraBtn.addEventListener('click',()=>{
+  const name=(extraName.value||'').trim();
+  const valStr=(extraValue.value||'').trim();
+  const val=moneyToNumber(valStr);
+  if(!name){alert('Informe um nome.');return;}
+  if(!isFinite(val)||val<=0){alert('Informe um valor válido.');return;}
+  addExtraToCatalog(name,val);extraName.value='';extraValue.value='';
+  rebuildTipoOptions();rebuildSubtipoOptions();applyFilter();renderTable();renderExtrasCatalog();
+  saveExtrasToStorage();
+});
+extrasList.addEventListener('click',e=>{
+  const b=e.target.closest('button[data-xdel]');if(!b)return;
+  removeExtraFromCatalog(b.getAttribute('data-xdel'));
+  rebuildTipoOptions();rebuildSubtipoOptions();applyFilter();renderTable();renderExtrasCatalog();
+  saveExtrasToStorage();
+});
+
+/* ===== Expor p/ Calendário ===== */
+window.__idToRow = idToRow;
+window.__priceOfId = priceOfId;
+window.__getSelection = ()=>({ ids:new Set(selectedIds), qtys:new Map(selectionQty) });
+
+/* ===== Boot CSV catálogo ===== */
+fileInput.addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const text=await f.text();bootFromCSVText(text);errorBox.style.display='none';
+});
+function bootFromCSVText(text){
+  const table=parseCSV(text);if(!table.length)throw new Error('CSV vazio');
+  const header=table[0].map(h=>h.trim());const idx=n=>header.indexOf(n);
+  const req=["Tipo","Subtipo","Booking Code","Name","Descrição","Serviço Inclui","Serviço Não Inclui","Valor"];
+  for(const c of req) if(idx(c)===-1) throw new Error('Coluna ausente: '+c);
+  rows=table.slice(1).map(line=>({
+    "Tipo":line[idx("Tipo")]||"",
+    "Subtipo":line[idx("Subtipo")]||"",
+    "Booking Code":line[idx("Booking Code")]||"",
+    "Name":line[idx("Name")]||"",
+    "Descrição":line[idx("Descrição")]||"",
+    "Serviço Inclui":line[idx("Serviço Inclui")]||"",
+    "Serviço Não Inclui":line[idx("Serviço Não Inclui")]||"",
+    "Valor":line[idx("Valor")]||""
+  }));
+
+  // carrega Extras e Cenários persistidos (depois de rows existirem)
+  loadExtrasFromStorage();
+  rebuildTipoOptions();rebuildSubtipoOptions();applyFilter();renderTable();renderExtrasCatalog();
+
+  loadScenariosFromStorage();
+  renderScenariosList();
+
+  selectedIds=new Set();selectionQty=new Map();previewSelectedScenarioNames.clear();
+  updateTotalsAndLists();
+}
+(async function bootCatalog(){
+  try{
+    const resp=await fetch('bookings.csv',{cache:'no-store'});if(!resp.ok)throw 0;
+    const text=await resp.text();bootFromCSVText(text);
+  }catch(_){
+    errorBox.style.display='block';
+    errorMsg.textContent='Erro ao carregar bookings.csv. Use "Carregar CSV" ou rode via http server.';
+  }
+})();
+
+/* ===================== CALENDÁRIO ===================== */
+const bigGrid=document.getElementById('bigGrid');
+const matchesError=document.getElementById('matchesError');
+const matchesFile=document.getElementById('matchesFile');
+const currentMatchBox=document.getElementById('currentMatchBox');
+const matchItems=document.getElementById('matchItems');
+const matchTotalEl=document.getElementById('matchTotal');
+
+const VENUES = [
+  'VANCOUVER','SEATTLE','SAN FRANCISCO BAY AREA','LOS ANGELES',
+  'GUADALAJARA','MEXICO CITY','MONTERREY','HOUSTON','DALLAS','KANSAS CITY',
+  'ATLANTA','MIAMI','TORONTO','BOSTON','PHILADELPHIA','NEW YORK NEW JERSEY'
+];
+const DATES = (() => {
+  const startUTC = Date.UTC(2026, 5, 11), endUTC = Date.UTC(2026, 6, 19);
+  const oneDay = 24*60*60*1000, out = [];
+  for(let t=startUTC;t<=endUTC;t+=oneDay){
+    const d=new Date(t), y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+    out.push({iso:`${y}-${m}-${day}`, label:`${day}/${m}`});
+  }
+  return out;
+})();
+function phaseClass(phase){
+  const p=String(phase||'').toLowerCase();
+  if(p.includes('round of 32')||p==='r32')return'r32';
+  if(p.includes('round of 16')||p==='r16')return'r16';
+  if(p.includes('quarter'))return'qf';
+  if(p.includes('semi'))return'sf';
+  if(p.includes('bronze'))return'br';
+  if(p.includes('final'))return'fn';
+  return'gs';
+}
+const COL_W = 60;
+
+const matchAssignments={}; let currentMatchId=null;
+const matchMeta=new Map();
+
+function buildDatePhaseMap(matches){
+  const map=new Map();
+  for(const m of matches){
+    const d=(m.Date||'').trim(); if(!d) continue;
+    const key=phaseClass(m.Phase);
+    if(!map.has(d)) map.set(d,new Set());
+    map.get(d).add(key);
+  }
+  return map;
+}
+function renderBoard(matches){
+  bigGrid.innerHTML='';
+  const allDates = DATES;
+  const datePhaseMap = buildDatePhaseMap(matches);
+  bigGrid.style.gridTemplateColumns = `220px repeat(${allDates.length}, ${COL_W}px)`;
+
+  const emptyHead=document.createElement('div');
+  emptyHead.className='date-head'; emptyHead.style.gridColumn='1/2'; bigGrid.appendChild(emptyHead);
+
+  for(const d of allDates){
+    const dh=document.createElement('div'); dh.className='date-head';
+    const phases=datePhaseMap.get(d.iso)||new Set();
+    dh.innerHTML = `
+      <div>${d.label}</div>
+      <div class="date-phases">
+        ${[...phases].map(k=>({gs:'GS',r32:'R32',r16:'R16',qf:'QF',sf:'SF',br:'BR',fn:'FN'}[k]||''))
+          .filter(Boolean)
+          .map(lbl=>`<span class="p-dot p-${lbl.toLowerCase()}">${lbl}</span>`).join('')}
+      </div>`;
+    bigGrid.appendChild(dh);
+  }
+
+  for(const venue of VENUES){
+    const vcell=document.createElement('div'); vcell.className='venue-cell'; vcell.textContent=venue; bigGrid.appendChild(vcell);
+    for(const d of allDates){
+      const slot=document.createElement('div'); slot.className='slot';
+      slot.dataset.venue=venue; slot.dataset.date=d.iso;
+      bigGrid.appendChild(slot);
+    }
+  }
+
+  for(const m of matches){
+    matchMeta.set(m.MatchId,{Date:m.Date, Venue:m.Venue, Phase:m.Phase, TeamA:m.TeamA||'Time A', TeamB:m.TeamB||'Time B'});
+    const slot=bigGrid.querySelector(`.slot[data-venue="${CSS.escape(m.Venue)}"][data-date="${CSS.escape(m.Date)}"]`);
+    if(!slot) continue;
+    const card=document.createElement('div');
+    card.className=`mcard ${phaseClass(m.Phase)}`;
+    card.dataset.mid=m.MatchId;
+    card.innerHTML=`<div class="mid">${m.MatchId}</div>`;
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      currentMatchId=m.MatchId;
+      const meta=matchMeta.get(m.MatchId)||{};
+      const confronto=`${meta.TeamA||'Time A'} x ${meta.TeamB||'Time B'}`;
+      const box=document.getElementById('currentMatchBox');
+      box.innerHTML=`<div><strong>${m.MatchId}</strong> • ${m.Venue} • ${m.Date}</div><div class="muted">${m.Phase||'Group'}</div><div><span class="badge">${confronto}</span></div>`;
+      renderMatchItems();
+    });
+    slot.appendChild(card);
+    matchAssignments[m.MatchId]=matchAssignments[m.MatchId]||new Map();
+  }
+
+  updateGlobalSummaries();
+}
+
+/* Itens do jogo selecionado */
+function renderMatchItems(){
+  const matchItems=document.getElementById('matchItems');
+  const matchTotalEl=document.getElementById('matchTotal');
+  matchItems.innerHTML=''; if(!currentMatchId){matchTotalEl.textContent='USD 0';return;}
+  const map=matchAssignments[currentMatchId]||new Map(); let tot=0;
+
+  for(const [id,qty] of map.entries()){
+    const r=window.__idToRow ? window.__idToRow(id) : null; if(!r) continue;
+    const unit=window.__priceOfId ? window.__priceOfId(id) : 0; const line=unit*(qty||1); tot+=line;
+
+    const code = r['Booking Code']||'';
+    const name = r['Name']||'';
+    const desc = r['Descrição']||'';
+
+    const el=document.createElement('div'); el.className='mi';
+    el.innerHTML = `
+      <div class="mi-code"><span class="chip" title="${code}">${code}</span></div>
+      <div class="mi-name" title="${name}">${name}</div>
+      <div class="mi-desc" title="${desc}">${desc}</div>
+
+      <div class="mi-qty">
+        <button class="btn" data-mminus="${id}" title="Diminuir">-</button>
+        <input type="number" min="1" step="1" value="${qty}" data-mqty="${id}">
+        <button class="btn" data-mplus="${id}" title="Aumentar">+</button>
+        <button class="btn btn-remove" data-mrem="${id}" title="Remover">remover</button>
+      </div>
+
+      <div class="mi-unit"><span class="badge" title="Preço unitário">${numberToMoney(unit)} un.</span></div>
+      <div class="mi-line"><span class="badge" title="Total do item">${numberToMoney(line)}</span></div>
+    `;
+    matchItems.appendChild(el);
+  }
+  matchTotalEl.textContent=numberToMoney(tot);
+  updateGlobalSummaries();
+}
+document.getElementById('matchItems').addEventListener('click',e=>{
+  const rem=e.target.closest('button[data-mrem]');
+  const minus=e.target.closest('button[data-mminus]');
+  const plus=e.target.closest('button[data-mplus]');
+  if(!currentMatchId) return; const map=matchAssignments[currentMatchId]||new Map();
+
+  if(rem){const id=rem.getAttribute('data-mrem');map.delete(id);matchAssignments[currentMatchId]=map;renderMatchItems();return;}
+  if(minus){const id=minus.getAttribute('data-mminus');const q=(map.get(id)||1);map.set(id,Math.max(1,q-1));renderMatchItems();return;}
+  if(plus){const id=plus.getAttribute('data-mplus');const q=(map.get(id)||1);map.set(id,q+1);renderMatchItems();return;}
+});
+document.getElementById('matchItems').addEventListener('change',e=>{
+  const inp=e.target.closest('input[data-mqty]');if(!inp||!currentMatchId)return;
+  const id=inp.getAttribute('data-mqty');let v=parseInt(inp.value,10);if(!isFinite(v)||v<1)v=1;
+  const map=matchAssignments[currentMatchId]||new Map();map.set(id,v);renderMatchItems();
+});
+
+document.getElementById('attachSelection').addEventListener('click',()=>{
+  if(!currentMatchId){alert('Selecione um jogo no calendário.');return;}
+  const sel = window.__getSelection ? window.__getSelection() : {ids:new Set(), qtys:new Map()};
+  const map=matchAssignments[currentMatchId]||new Map();
+  for(const id of sel.ids){ const q=sel.qtys.get(id)||1; map.set(id,(map.get(id)||0)+q); }
+  matchAssignments[currentMatchId]=map;
+  renderMatchItems();
+});
+document.getElementById('clearMatch').addEventListener('click',()=>{
+  if(!currentMatchId){alert('Selecione um jogo no calendário.');return;}
+  matchAssignments[currentMatchId]=new Map();
+  renderMatchItems();
+});
+
+/* ===== Resumo Geral ===== */
+const globalTotalEl=document.getElementById('globalTotal');
+const perMatchTableBody=document.querySelector('#perMatchTable tbody');
+function matchSum(mid){
+  let t=0; const map=matchAssignments[mid]||new Map();
+  for(const [id,qty] of map.entries()){
+    const unit=window.__priceOfId ? window.__priceOfId(id) : 0;
+    t+=unit*(qty||1);
+  }
+  return t;
+}
+function updateGlobalSummaries(){
+  let total=0; const rowsHTML=[];
+  for(const mid of Object.keys(matchAssignments)){
+    const m=matchMeta.get(mid)||{};
+    const sum=matchSum(mid);
+    if(sum>0 || (matchAssignments[mid] && matchAssignments[mid].size>0)){
+      total+=sum;
+      const confronto=`${m.TeamA||'Time A'} x ${m.TeamB||'Time B'}`;
+      rowsHTML.push(`
+        <tr>
+          <td>${mid}</td>
+          <td>${m.Date||''}</td>
+          <td>${m.Venue||''}</td>
+          <td>${confronto}</td>
+          <td>${m.Phase||''}</td>
+          <td><strong>${numberToMoney(sum)}</strong></td>
+        </tr>
+      `);
+    }
+  }
+  globalTotalEl.textContent=numberToMoney(total);
+  perMatchTableBody.innerHTML = rowsHTML.join('') || `<tr><td colspan="6" class="muted">Sem associações ainda.</td></tr>`;
+}
+
+/* Carregar matches.csv e desenhar grade */
+function buildMatchesFromCSV(csvText){
+  const table=parseCSV(csvText); if(!table.length){matchesError.style.display='block';return;}
+  const header=table[0].map(h=>h.trim());
+  const id=n=>header.indexOf(n);
+  const need=["MatchId","Date","Region","Venue","Phase"];
+  for(const c of need) if(id(c)===-1){alert('matches.csv precisa de: '+need.join(', '));return;}
+  const hasA=id('TeamA')!==-1, hasB=id('TeamB')!==-1;
+  const matches=table.slice(1).map(r=>({
+    MatchId:String(r[id('MatchId')]).trim(),
+    Date:String(r[id('Date')]).trim(),
+    Region:String(r[id('Region')]).trim(),
+    Venue:String(r[id('Venue')]).trim().toUpperCase(),
+    Phase:String(r[id('Phase')]).trim(),
+    TeamA: hasA ? String(r[id('TeamA')]).trim() : 'Time A',
+    TeamB: hasB ? String(r[id('TeamB')]).trim() : 'Time B'
+  }));
+  renderBoard(matches);
+}
+document.getElementById('matchesFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f)return; const text=await f.text(); buildMatchesFromCSV(text); matchesError.style.display='none';
+});
+(async function bootCalendar(){
+  try{
+    const resp=await fetch('matches.csv',{cache:'no-store'});
+    if(!resp.ok) throw 0;
+    const txt=await resp.text();
+    buildMatchesFromCSV(txt);
+  }catch(_){
+    matchesError.style.display='block';
+  }
+})();
+
+</script>
+</body>
+</html>
