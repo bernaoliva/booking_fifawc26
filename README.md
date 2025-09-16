@@ -28,8 +28,3 @@ Permite navegar pelo catálogo de serviços, montar cenários customizados, visu
   - Suporte a fontes customizadas (`fonte.ttf` e `fontefina.ttf`).
   - Estilo escuro inspirado em branding esportivo (cores `#3f3e3f` e `#231f20`).
   - Layout responsivo.
-
----
-
-## 📂 Estrutura de Arquivos
-
